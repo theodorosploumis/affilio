@@ -1,0 +1,101 @@
+<?php
+
+/**
+ * Implements hook_cron()
+ * Create a cron job
+ */
+function feeds_downloader_cron() {
+  // Get last cron run
+  $last_run = variable_get('feeds_downloader_last_cron', 0);
+
+  // Default interval every 20 hrs.
+  $interval = variable_get('feeds_downloader_interval', 60 * 60 * 20);
+
+  // Run cron if it is time to run
+  if(time() - $last_run > $interval){
+    variable_set('feeds_downloader_last_cron', time());
+
+    // Run a function
+    $path = "public://feeds";
+    $list = "affiliate_feeds";
+    feeds_downloader_curl_list($path, $list);
+  }
+}
+
+/**
+ * A function to download files using curl.
+ * @param string $path
+ * @param string $list
+ */
+function feeds_downloader_curl_list($path = "public://", $list){
+  // Get real path of $path
+  $path = drupal_realpath($path);
+
+  // Get array of the $replaced values list
+  $ch_array = values_load($list)->data;
+  //dpm($ch_array);
+
+  // Create a new array using keys and values of sub-arrays
+  $keys = array();
+  $values = array();
+  $new_array = array();
+
+  $keys = array_map(function ($array) { return $array['key']; }, $ch_array);
+  $values = array_map(function ($array) { return $array['value']; }, $ch_array);
+  $new_array = array_combine($keys,$values);
+
+  // Loop through each value
+  foreach ($new_array as $key => $value) {
+    // Live url of the file
+    $source = $value;
+    // Local file of the file to be saved
+    $filename = $path . "/" . $key . ".xml";
+
+    // Disable time limit
+    set_time_limit(0);
+
+    // Create file
+    $fp = fopen($filename, "w+");
+
+    // Initialize curl
+    $ch = curl_init();
+    // Add url
+    curl_setopt($ch, CURLOPT_URL, $source);
+    // Allow redirects
+    //curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_setopt($ch, CURLOPT_POSTREDIR, 3);
+    // Set timeout
+    curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+    // Write curl response to file
+    curl_setopt($ch, CURLOPT_FILE, $fp);
+
+    // Run curl - download
+    $results = curl_exec($ch);
+
+    // Get info about download
+    $info = curl_getinfo($ch);
+    $message = t("File %file with size: %size_download MB downloaded on
+    %date from %url");
+    $message_variables = array(
+      '%url' => $info['url'],
+      '%size_download' => $info['size_download']/1000000,
+      '%date' => format_date($info['filetime'], $type = 'medium'),
+      '%file' => $key.".xml",
+    );
+    
+    // Debug download if there is no error
+    if(!curl_errno($ch)) {
+      // Create a watchdog message
+      watchdog("feeds_downloader", $message, $message_variables, WATCHDOG_INFO);
+    } else {
+      watchdog("feeds_downloader", $message, $message_variables, WATCHDOG_ERROR);
+    }
+
+    // Close curl function
+    curl_close($ch);
+
+    // Close file
+    fclose($fp);
+  }
+}

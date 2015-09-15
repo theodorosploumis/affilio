@@ -1,0 +1,69 @@
+// Views with Products
+.view-homepage-categories,
+.view-homepage-products,
+.view-id-products {
+  > header {
+    padding: 15px;
+  }
+  .views-row {
+    float: left;
+  }
+}
+
+
+// Views pager
+.item-list-pager {
+  clear: both;
+  text-align: center;
+  padding-top: 20px;
+  li {
+    display: inline-block;
+    background: $filter_bg;
+    color: #000;
+    margin-right: 4px;
+    border-radius: $radius_normal;
+    &.ellipsis,
+    &.current {
+      padding: 4px 8px;
+    }
+    a {
+      color: #000;
+      padding: 4px 8px;
+      display: block;
+    }
+    &.current,
+    &:hover,
+    &:focus {
+      background: #000;
+      color: #fff;
+      a {
+        color: #fff;
+      }
+    }
+  }
+}
+
+// All Shops, Brands page - views
+.attachment-before {
+  @include clearfix;
+  @include typecsset-space(margin-bottom);
+}
+
+.view-id-brands,
+.view-id-shops {
+  .views-row {
+    float: left;
+    width: 23%;
+    padding: 1% 1.5% 0 0;
+  }
+}
+
+// Blog list
+
+.view-id-blog {
+  .views-row {
+    margin-bottom: 20px;
+    clear: both;
+  }
+}
+

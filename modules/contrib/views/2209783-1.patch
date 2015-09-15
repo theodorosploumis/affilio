@@ -1,0 +1,14 @@
+diff --git a/includes/handlers.inc b/includes/handlers.inc
+index 4346133..1628855 100644
+--- a/includes/handlers.inc
++++ b/includes/handlers.inc
+@@ -855,6 +855,9 @@ class views_many_to_one_helper {
+   function summary_join() {
+     $field = $this->handler->relationship . '_' . $this->handler->table . '.' . $this->handler->field;
+     $join = $this->get_join();
++    if (!isset($join)) {
++      $join = new stdClass();
++    }
+ 
+     // shortcuts
+     $options = $this->handler->options;

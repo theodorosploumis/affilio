@@ -1,0 +1,12 @@
+diff --git a/values.module b/values.module
+index 21bc8a6..22f850a 100644
+--- a/values.module
++++ b/values.module
+@@ -231,6 +231,7 @@ function values_form($form, &$form_state, $action = 'edit', $value_set = NULL) {
+         '#title' => t('Value @n', array('@n' => ($delta + 1))),
+         '#default_value' => isset($value_set->data[$delta]['value']) ? $value_set->data[$delta]['value'] : '',
+         '#access' => user_access('administer values'),
++        '#maxlength' => 500,
+       ),
+       'key' => array(
+         '#type' => 'machine_name',

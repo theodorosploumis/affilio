@@ -1,0 +1,16 @@
+name = Administration Views
+description = Administration Views (Products, Taxonomies, Files, People) for admins.
+core = 7.x
+package = Affilio
+version = 7.x-1.0
+project = affilio_administration_views
+dependencies[] = features
+dependencies[] = menu
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[views_view][] = administer_files
+features[views_view][] = administer_products
+features[views_view][] = taxonomies
+features_exclude[dependencies][ctools] = ctools
+features_exclude[dependencies][admin_views] = admin_views

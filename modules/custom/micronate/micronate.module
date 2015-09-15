@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * Implements hook_cron().
+ */
+function micronate_cron() {
+  // Get last cron run
+  $last_run = variable_get('micronate_last_cron', 0);
+
+  // Default interval every 8 hrs.
+  $interval = variable_get('micronate_interval', 60 * 60 * 8);
+
+  // Run cron if it is time to run
+  if(time() - $last_run > $interval){
+    variable_set('micronate_last_cron', time());
+
+    $machine_name = "LinkwiseProducts";
+    _micronate_run_migration($machine_name);
+  }
+}
+
+/**
+ * Create new nodes using migrate module.
+ * Needs the name of the migration class
+ * @param $machine_name (this is the migration class)
+ */
+function _micronate_run_migration($machine_name = NULL) {
+  // Get the migration class
+  if ($machine_name == NULL) {
+    $message = t("Migration needs a migration class. Aborting");
+    watchdog("micronate", $message, WATCHDOG_ERROR);
+  } else {
+    // Run a migrate function
+    migrate_static_registration(array($machine_name));
+    $migration = Migration::getInstance($machine_name);
+    $result = $migration->processImport();
+  }
+}

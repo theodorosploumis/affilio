@@ -1,0 +1,14 @@
+diff --git a/elysia_cron.module b/elysia_cron.module
+index ce47e9d..536d3da 100644
+--- a/elysia_cron.module
++++ b/elysia_cron.module
+@@ -99,7 +99,8 @@ if (EC_DRUPAL_VERSION >= 7) {
+       'description' => 'View and manage cron table',
+       'page callback' => 'elysia_cron_admin_page',
+       'access arguments' => array('administer elysia_cron'),
+-    );
++      'file' => NULL,
++    ) + $items['admin/config/system/cron'];
+   }
+ }
+ 

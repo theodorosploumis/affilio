@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * THIS FILE INTENTIONALLY LEFT BLANK.
+ *
+ * Yes, there is no code in the .module file. Migrate operates almost entirely
+ * through classes, and by adding any files containing class definitions to the
+ * .info file, those files are automatically included only when the classes they
+ * contain are referenced. The one non-class piece you need to implement is
+ * hook_migrate_api(), but because .migrate.inc is registered using
+ * hook_hook_info, by defining your implementation of that hook in
+ * example.migrate.inc, it is automatically invoked only when needed.
+ */
+
+
+// Helper functions
+
+/**
+ * Returns a better string after some manipulations.
+ * Used mainly for taxonomy term imports and multi values.
+ * @param string $string
+ * @return string $string
+ */
+function betterTaxonomyString($string) {
+  // Remove whitespace
+  $string = preg_replace("/\s+/", " ", $string);
+
+  // Replace separators
+  $old = array("->","/",">","&gt;",",","-");
+  $new = array("|","|","|","|","|","|");
+  $string = str_replace($old, $new, $string);
+
+  // Convert to uppercase
+  $string = grstrtoupper($string);
+
+  // Return "better" string
+  return $string;
+}
+
+/**
+ * Used mainly for taxonomy term imports and multi values.
+ * @param string $string, the string to be converted
+ * @param string $list, name of the values list
+ * @return array $array, final values on array
+ */
+function betterTaxonomyArray($string, $list="") {
+  // Create a better string
+  $string = betterTaxonomyString($string);
+
+  if ($string && $list != "") {
+    // Replace values before convert to array
+    $string = _replace_keywords($string, $list);
+
+    // Create array from string
+    $array = betterStringToArray($string);
+    return $array;
+  }
+  if ($string && $list == "") {
+    // Create array from string
+    $array = betterStringToArray($string);
+    return $array;
+  }
+  else {
+    return;
+  }
+}
+
+/**
+ * betterTaxonomyArray but for 'size' vocabulary
+ * @param $string
+ * @return array
+ */
+function betterSizeArray($string) {
+  $list = "replace_size";
+  return betterTaxonomyArray($string, $list);
+}
+
+/**
+ * betterTaxonomyArray but for 'color' vocabulary
+ * @param $string
+ * @return array
+ */
+function betterColorArray($string) {
+  $list = "replace_colors";
+  return betterTaxonomyArray($string, $list);
+}
+
+/**
+ * Returns an array from a string after some manipulations.
+ * Works well with function betterCategoryString()
+ * @param string $string
+ * @return array $array
+ */
+function betterStringToArray($string) {
+  // Explode string on "|" and create an array
+  $array = explode("|", $string);
+
+  // Trim array values
+  $array = array_map("trim", $array);
+
+  // Remove empty values
+  $array = array_filter($array);
+
+  // Return "good" array
+  return $array;
+}
+
+/**
+ * Returns an integer if string is a number
+ * or nothing if it is text.
+ * @param string $string
+ * @return int $string
+ */
+function textToNumber($string) {
+  if (is_numeric($string)) {
+    return (int) $string;
+  } else {
+    return "";
+  }
+}

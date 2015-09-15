@@ -1,0 +1,54 @@
+// Colors - background
+$body_bg: gray;
+$header_bg: #000;
+$teaser_bg: #fff;
+$filter_bg: #F2F2F2;
+$buy_bg: #e06;
+$details_bg: #32978b;
+$page_bg: #fbfbfb;
+$discount_bg: $filter_bg;
+$footer_bg: gray;
+$taxonomy_details_bg: #fff;
+
+// Colors - text, link etc
+$normal_link: gray;
+$hover_link: #e06;
+$active_link: #e06;
+$visited_link: gray;
+$focus_link: #e06;
+$details_link: #fff;
+$discount_color: #545357;
+$filter_color: #6F6F6F;
+$filter_link: #170038;
+
+// Images, icons
+$facebook_icon: 'black_facebook.png';
+$twitter_icon: 'black_twitter.png';
+$pinterest_icon: 'black_pinterest.png';
+
+// Size, widths etc
+$price_size: 28px;
+$radius_normal: 3px;
+$radius_small: 1px;
+
+// Fonts
+$font_family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+// TypeCSSet variables
+$typecsset-base-font-size: 14px;
+$typecsset-base-line-height: 20px;
+// TypeCSSet Heading sizes
+$typecsset-h1-size: 30px;
+$typecsset-h2-size: 28px;
+$typecsset-h3-size: 22px;
+$typecsset-h4-size: 18px;
+$typecsset-h5-size: 16px;
+$typecsset-h6-size: 14px;
+
+//@include typecsset-font-size(20px);
+// Debugging typecsset with printed baseline
+//$typecsset-show-baseline: true;
+
+
+// Singularitygs
+$output: 'float';

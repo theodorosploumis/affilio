@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Blocks feature.
+ */
+
+include_once 'affilio_blocks.features.inc';

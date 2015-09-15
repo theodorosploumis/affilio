@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Content types feature.
+ */
+
+include_once 'affilio_content_types.features.inc';

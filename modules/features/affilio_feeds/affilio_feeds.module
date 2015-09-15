@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Feeds feature.
+ */
+
+include_once 'affilio_feeds.features.inc';

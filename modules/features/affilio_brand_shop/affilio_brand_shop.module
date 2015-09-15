@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Brand Shop feature.
+ */
+
+include_once 'affilio_brand_shop.features.inc';

@@ -1,0 +1,42 @@
+// Requirements
+@import 'compass';
+@import 'breakpoint';
+@import 'singularitygs';
+@import 'sassy-buttons';
+
+// Current project variables
+@import 'partials/variables';
+
+// Singularitygs
+@include add-grid(12);
+@include add-gutter(1/4);
+//@include background-grid($color: #ddd);
+//@include sgs-change('debug', true);
+
+// Image sprites
+//@import "../images/*.png";
+//@include all-images-sprites;
+
+// TypeCSSet
+@import 'assets/typecsset';
+
+// Partial files
+
+// General
+@import 'partials/general/*';
+@import 'partials/layout/*';
+
+// Regions
+@import 'partials/regions/*';
+
+// Views
+@import 'partials/views/*';
+
+// Facetapi
+@import 'partials/facet_api/*';
+
+// Node types
+@import 'partials/node/*';
+
+// States
+@import 'partials/states/*';

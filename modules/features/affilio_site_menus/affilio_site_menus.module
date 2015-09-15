@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Site Menus feature.
+ */
+
+include_once 'affilio_site_menus.features.inc';

@@ -1,0 +1,158 @@
+; Packaging information for affilio
+name = "Affilio"
+description = "An affiliate aggregator"
+core = "7.x"
+; ----------
+; Dependencies
+; ----------
+; Administration
+dependencies[] = admin_menu
+dependencies[] = admin_views
+dependencies[] = module_filter
+; Advanced CSS/JS Aggregation
+dependencies[] = advagg
+dependencies[] = advagg_bundler
+dependencies[] = advagg_css_compress
+dependencies[] = advagg_js_compress
+; Affilio
+dependencies[] = affilio_displaysuite
+dependencies[] = affiliobase
+; Chaos tool suite
+dependencies[] = ctools
+; Core
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = dblog
+dependencies[] = field
+dependencies[] = field_sql_storage
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = image
+dependencies[] = list
+dependencies[] = locale
+dependencies[] = menu
+dependencies[] = node
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = system
+dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = user
+; Development
+dependencies[] = devel
+dependencies[] = profiler_builder
+dependencies[] = profiler_builder_extras
+; Display Suite
+dependencies[] = ds
+dependencies[] = ds_ui
+; Features extra
+dependencies[] = fe_block
+; Feeds
+dependencies[] = feeds
+dependencies[] = feeds_downloader
+dependencies[] = feeds_tamper
+dependencies[] = feeds_tamper_php
+dependencies[] = feeds_tamper_ui
+dependencies[] = feeds_ui
+dependencies[] = feeds_xpathparser
+; Fields
+dependencies[] = entityreference
+dependencies[] = filefield_paths
+; Form Elements
+dependencies[] = values
+; Frontend
+dependencies[] = magic
+; Image
+dependencies[] = smartcrop
+; Migrate
+dependencies[] = micronate
+; Migration
+dependencies[] = migrate
+dependencies[] = migrate_ui
+dependencies[] = xmlgrate
+; Multilingual - Entity Translation
+dependencies[] = entity_translation
+; Multilingual - Internationalization
+dependencies[] = i18n
+dependencies[] = i18n_string
+dependencies[] = i18n_taxonomy
+dependencies[] = i18n_translation
+; Other
+dependencies[] = back_to_top
+dependencies[] = backup_migrate
+dependencies[] = blockify
+dependencies[] = colorbox
+dependencies[] = elysia_cron
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = eu_cookie_compliance
+dependencies[] = job_scheduler
+dependencies[] = libraries
+dependencies[] = menu_block
+dependencies[] = pathauto
+dependencies[] = robotstxt
+dependencies[] = session_expire
+dependencies[] = speedy
+dependencies[] = strongarm
+dependencies[] = taxonomy_machine_name
+dependencies[] = token
+dependencies[] = transliteration
+; Path management
+dependencies[] = globalredirect
+; Performance
+dependencies[] = js
+; Performance and scalability
+dependencies[] = boost
+dependencies[] = entitycache
+dependencies[] = expire
+dependencies[] = httprl
+dependencies[] = imageinfo_cache
+; SEO
+dependencies[] = page_title
+; Search
+dependencies[] = search_api
+dependencies[] = search_api_db
+dependencies[] = search_api_facetapi
+dependencies[] = search_api_ranges
+dependencies[] = search_api_solr
+dependencies[] = search_api_sorts
+dependencies[] = search_api_sorts_widget
+dependencies[] = search_api_views
+; Search Toolkit
+dependencies[] = current_search
+dependencies[] = facetapi
+dependencies[] = facetapi_bonus
+; Sharing
+dependencies[] = sharethis
+; Statistics
+dependencies[] = googleanalytics
+; Taxonomy menu
+dependencies[] = taxonomy_menu
+; User interface
+dependencies[] = ckeditor
+dependencies[] = jquery_update
+; Variable
+dependencies[] = variable
+; Views
+dependencies[] = views
+dependencies[] = views_bulk_operations
+dependencies[] = views_ui
+; XML sitemap
+dependencies[] = xmlsitemap
+dependencies[] = xmlsitemap_menu
+; Features
+dependencies[] = features
+dependencies[] = affilio_administration_views
+dependencies[] = affilio_blocks
+dependencies[] = affilio_brand_shop
+dependencies[] = affilio_content_types
+dependencies[] = affilio_feeds
+dependencies[] = affilio_product_type
+dependencies[] = affilio_site_menus
+dependencies[] = affilio_solrproducts
+dependencies[] = affilio_text_formats
+dependencies[] = affilio_values_lists
+

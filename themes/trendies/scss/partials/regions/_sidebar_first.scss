@@ -1,0 +1,23 @@
+// Sidebar first
+.region-sidebar-first-top,
+.region-sidebar-first-middle,
+.region-sidebar-first {
+  //font-size: 0.8em;
+  background: $filter_bg;
+  padding: 1em;
+  border-radius: $radius_normal;
+  color: $filter_color;
+  margin-bottom: 10px;
+  h2 {
+    margin-bottom: 10px;
+  }
+  .sharethis-buttons {
+    padding: 20px 0;
+  }
+}
+
+// region-sidebar-first-bottom
+.region-sidebar-first-bottom {
+  text-align: center;
+  margin-bottom: 6px;
+}

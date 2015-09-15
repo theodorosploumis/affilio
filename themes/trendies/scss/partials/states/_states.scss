@@ -1,0 +1,29 @@
+// Lightbox
+#lightbox2-overlay {
+  cursor: pointer;
+}
+
+.light-page {
+  padding: 10px 20px;
+  overflow: hidden;
+  .node-product {
+    .field-name-field-price,
+    .field-name-field-price-full,
+    .field-name-field-discount {
+      @include typecsset-font-size(25px);
+    }
+  }
+}
+
+body.with-lightbox {
+  background: #fff;
+  #backtotop {
+    display: none !important;
+  }
+}
+
+#numberDisplay {
+  display: block;
+  padding: 1em;
+  font-size: 16px;
+}

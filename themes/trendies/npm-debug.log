@@ -1,0 +1,129 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   '-g',
+1 verbose cli   'generator-drupalmodule' ]
+2 info using npm@2.3.0
+3 info using node@v0.11.16
+4 silly cache add args [ 'generator-drupalmodule', null ]
+5 verbose cache add spec generator-drupalmodule
+6 silly cache add parsed spec { raw: 'generator-drupalmodule',
+6 silly cache add   scope: null,
+6 silly cache add   name: 'generator-drupalmodule',
+6 silly cache add   rawSpec: '',
+6 silly cache add   spec: '*',
+6 silly cache add   type: 'range' }
+7 verbose addNamed generator-drupalmodule@*
+8 silly addNamed semver.valid null
+9 silly addNamed semver.validRange *
+10 silly addNameRange { name: 'generator-drupalmodule', range: '*', hasData: false }
+11 silly mapToRegistry name generator-drupalmodule
+12 silly mapToRegistry using default registry
+13 silly mapToRegistry registry https://registry.npmjs.org/
+14 silly mapToRegistry uri https://registry.npmjs.org/generator-drupalmodule
+15 verbose addNameRange registry:https://registry.npmjs.org/generator-drupalmodule not in flight; fetching
+16 verbose request uri https://registry.npmjs.org/generator-drupalmodule
+17 verbose request no auth needed
+18 info attempt registry request try #1 at 19:35:31
+19 verbose request id 70f09ceb6b51d840
+20 http request GET https://registry.npmjs.org/generator-drupalmodule
+21 http 200 https://registry.npmjs.org/generator-drupalmodule
+22 silly get cb [ 200,
+22 silly get   { date: 'Thu, 12 Feb 2015 17:35:30 GMT',
+22 silly get     server: 'CouchDB/1.5.0 (Erlang OTP/R16B03)',
+22 silly get     etag: '"2VZ4TSYF1XC2SCH9X8FAV2PF3"',
+22 silly get     'content-type': 'application/json',
+22 silly get     'cache-control': 'max-age=60',
+22 silly get     'content-length': '8928',
+22 silly get     'accept-ranges': 'bytes',
+22 silly get     via: '1.1 varnish',
+22 silly get     age: '0',
+22 silly get     'x-served-by': 'cache-lcy1128-LCY',
+22 silly get     'x-cache': 'MISS',
+22 silly get     'x-cache-hits': '0',
+22 silly get     'x-timer': 'S1423762530.546903,VS0,VE151',
+22 silly get     vary: 'Accept',
+22 silly get     'keep-alive': 'timeout=10, max=50',
+22 silly get     connection: 'Keep-Alive' } ]
+23 silly addNameRange number 2 { name: 'generator-drupalmodule', range: '*', hasData: true }
+24 silly addNameRange versions [ 'generator-drupalmodule',
+24 silly addNameRange   [ '0.0.0', '0.0.1', '0.1.0', '0.1.1', '0.1.2' ] ]
+25 verbose addNamed generator-drupalmodule@0.1.2
+26 silly addNamed semver.valid 0.1.2
+27 silly addNamed semver.validRange 0.1.2
+28 silly mapToRegistry name generator-drupalmodule
+29 silly mapToRegistry using default registry
+30 silly mapToRegistry registry https://registry.npmjs.org/
+31 silly mapToRegistry uri https://registry.npmjs.org/generator-drupalmodule
+32 verbose addRemoteTarball https://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz not in flight; adding
+33 verbose addRemoteTarball [ 'https://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz',
+33 verbose addRemoteTarball   '1eb13ed16a2664eb6c1d27a05cd0b9d8d0321423' ]
+34 info retry fetch attempt 1 at 19:35:32
+35 info attempt registry request try #1 at 19:35:32
+36 http fetch GET https://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz
+37 http fetch 200 https://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz
+38 silly fetchAndShaCheck shasum 1eb13ed16a2664eb6c1d27a05cd0b9d8d0321423
+39 verbose addTmpTarball /tmp/npm-19239-5cb43713/registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz not in flight; adding
+40 verbose addTmpTarball already have metadata; skipping unpack for generator-drupalmodule@0.1.2
+41 silly cache afterAdd generator-drupalmodule@0.1.2
+42 verbose afterAdd /home/tpl/.npm/generator-drupalmodule/0.1.2/package/package.json not in flight; writing
+43 verbose afterAdd /home/tpl/.npm/generator-drupalmodule/0.1.2/package/package.json written
+44 silly install resolved [ { name: 'generator-drupalmodule',
+44 silly install resolved     version: '0.1.2',
+44 silly install resolved     description: 'Yeoman generator for drupal modules',
+44 silly install resolved     keywords: [ 'yeoman-generator' ],
+44 silly install resolved     homepage: 'https://github.com/davidgenetic/generator-drupalmodule',
+44 silly install resolved     bugs: { url: 'https://github.com/davidgenetic/generator-drupalmodule/issues' },
+44 silly install resolved     author:
+44 silly install resolved      { name: 'David De Coninck',
+44 silly install resolved        email: 'david@genetic.be',
+44 silly install resolved        url: 'https://github.com/davidgenetic' },
+44 silly install resolved     main: 'app/index.js',
+44 silly install resolved     repository:
+44 silly install resolved      { type: 'git',
+44 silly install resolved        url: 'git://github.com/davidgenetic/generator-drupalmodule.git' },
+44 silly install resolved     scripts: { test: 'mocha' },
+44 silly install resolved     dependencies: { 'yeoman-generator': '~0.10.2' },
+44 silly install resolved     devDependencies: { mocha: '~1.9.0' },
+44 silly install resolved     engines: { node: '>=0.8.0' },
+44 silly install resolved     licenses: [ [Object] ],
+44 silly install resolved     readme: '# Generator-drupalmodule\n\nYeoman generator for drupal modules.\n\n## Getting started\n- Make sure you have [yo](https://github.com/yeoman/yo) installed:\n    `npm install -g yo`\n- Install the generator: `npm install -g generator-drupalmodule`\n- mkdir your module folder at sites/*/modules and cd into it\n- Run: `yo drupalmodule`\n\n## License\n[MIT License](http://en.wikipedia.org/wiki/MIT_License)\n',
+44 silly install resolved     readmeFilename: 'README.md',
+44 silly install resolved     _id: 'generator-drupalmodule@0.1.2',
+44 silly install resolved     dist:
+44 silly install resolved      { shasum: '1eb13ed16a2664eb6c1d27a05cd0b9d8d0321423',
+44 silly install resolved        tarball: 'http://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz' },
+44 silly install resolved     _from: 'generator-drupalmodule@*',
+44 silly install resolved     _npmVersion: '1.3.4',
+44 silly install resolved     _npmUser: { name: 'davidgenetic', email: 'david@maneuver.be' },
+44 silly install resolved     maintainers: [ [Object] ],
+44 silly install resolved     directories: {},
+44 silly install resolved     _shasum: '1eb13ed16a2664eb6c1d27a05cd0b9d8d0321423',
+44 silly install resolved     _resolved: 'https://registry.npmjs.org/generator-drupalmodule/-/generator-drupalmodule-0.1.2.tgz' } ]
+45 info install generator-drupalmodule@0.1.2 into /usr/local/lib
+46 info installOne generator-drupalmodule@0.1.2
+47 verbose installOne of generator-drupalmodule to /usr/local/lib not in flight; installing
+48 warn locking Error: EACCES, open '/home/tpl/.npm/_locks/generator-drupalmodule-5024376573980218.lock'
+48 warn locking     at Error (native)
+48 warn locking  /home/tpl/.npm/_locks/generator-drupalmodule-5024376573980218.lock failed { [Error: EACCES, open '/home/tpl/.npm/_locks/generator-drupalmodule-5024376573980218.lock']
+48 warn locking   errno: -13,
+48 warn locking   code: 'EACCES',
+48 warn locking   path: '/home/tpl/.npm/_locks/generator-drupalmodule-5024376573980218.lock' }
+49 verbose stack Error: Attempt to unlock /usr/local/lib/node_modules/generator-drupalmodule, which hasn't been locked
+49 verbose stack     at unlock (/usr/local/lib/node_modules/npm/lib/utils/locker.js:66:11)
+49 verbose stack     at cb (/usr/local/lib/node_modules/npm/lib/install.js:929:5)
+49 verbose stack     at /usr/local/lib/node_modules/npm/lib/install.js:933:20
+49 verbose stack     at /usr/local/lib/node_modules/npm/lib/utils/locker.js:40:9
+49 verbose stack     at cb (/usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:149:38)
+49 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:177:38
+49 verbose stack     at FSReqWrap.oncomplete (fs.js:99:15)
+50 verbose cwd /home/tpl/vms/vdd/data/drupal7/sites/all/themes/trendies
+51 error Linux 3.13.0-45-generic
+52 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "install" "-g" "generator-drupalmodule"
+53 error node v0.11.16
+54 error npm  v2.3.0
+55 error Attempt to unlock /usr/local/lib/node_modules/generator-drupalmodule, which hasn't been locked
+56 error If you need help, you may report this error at:
+56 error     <http://github.com/npm/npm/issues>
+57 verbose exit [ 1, true ]

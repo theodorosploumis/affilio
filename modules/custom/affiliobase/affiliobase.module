@@ -1,0 +1,368 @@
+<?php
+
+
+/**
+ * Implements hook_permission()
+ */
+function affiliobase_permission() {
+  return array(
+    'administer affilio' => array(
+      'title' => t('Administer Affilio'),
+      'description' => t('Perform administration tasks for Affilio distribution.'),
+    ),
+  );
+}
+
+/**
+ * Converts a greek url to urlencode equivalent.
+ * @param string $string
+ * @return string $string (converted)
+ */
+function _greekurl($string) {  
+$greek = array('α','ά','Ά','Α','β','Β','γ', 'Γ', 'δ','Δ','ε','έ','Ε','Έ','ζ','Ζ','η','ή','Η','θ','Θ','ι','ί','ϊ','ΐ','Ι','Ί', 'κ','Κ','λ','Λ','μ','Μ','ν','Ν','ξ','Ξ','ο','ό','Ο','Ό','π','Π','ρ','Ρ','σ','ς', 'Σ','τ','Τ','υ','ύ','Υ','Ύ','φ','Φ','χ','Χ','ψ','Ψ','ω','ώ','Ω','Ώ'); 
+$encoded = array_map("urlencode", $greek); 
+$string  = str_replace($greek, $encoded, $string); 
+return $string;
+}
+
+/**
+ * Converts a greek string to greeklish.
+ * Optios to revert (english to greek) as also as capitalize result.
+ * @param $string
+ * @param $case
+ * @return string
+ */
+function greeklish($string, $case=NULL) {
+  $greek = array('α','ά','Ά','Α','β','Β','γ', 'Γ', 'δ','Δ','ε','έ','Ε','Έ','ζ','Ζ','η','ή','Η','θ','Θ','ι','ί','ϊ','ΐ','Ι','Ί', 'κ','Κ','λ','Λ','μ','Μ','ν','Ν','ξ','Ξ','ο','ό','Ο','Ό','π','Π','ρ','Ρ','σ','ς', 'Σ','τ','Τ','υ','ύ','Υ','Ύ','φ','Φ','χ','Χ','ψ','Ψ','ω','ώ','Ω','Ώ',' ',"'","'",',');
+  // English equivalents characters
+  $english = array('a', 'a','A','A','b','B','g','G','d','D','e','e','E','E','z','Z','i','i','I','th','Th', 'i','i','i','i','I','I','k','K','l','L','m','M','n','N','x','X','o','o','O','O','p','P' ,'r','R','s','s','S','t','T','u','u','Y','Y','f','F','ch','Ch','ps','Ps','o','o','O','O','_','_','_','_');
+
+  // Option to capitalize string while converting
+  if ($case == "uppercase") {
+    $english = array_map('strtoupper', $english);
+  }
+  if ($case == "lowercase" | NULL === $case) {
+    $english = array_map('strtolower', $english);
+  }
+
+  $string  = str_replace($greek, $english, $string);
+  return $string;
+}
+
+/**
+ * Greek string to uppercase
+ * Correctly converts greek letters to uppercase.
+ * @access	public
+ * @param	string
+ * @return string
+ */
+function grstrtoupper($string) {
+  $latin_check = '/[\x{0030}-\x{007f}]/u';
+  if (preg_match($latin_check, $string))
+  {
+    $string = strtoupper($string);
+  }
+
+  $letters = array('α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω');
+  $letters_accent = array('ά', 'έ', 'ή', 'ί', 'ό', 'ύ', 'ώ');
+  $letters_upper_accent	= array('Ά', 'Έ', 'Ή', 'Ί', 'Ό', 'Ύ', 'Ώ');
+  $letters_upper_solvents	= array('ϊ', 'ϋ');
+  $letters_other = array('ς');
+  $letters_to_uppercase	= array('Α', 'Β', 'Γ', 'Δ', 'Ε', 'Ζ', 'Η', 'Θ', 'Ι', 'Κ', 'Λ', 'Μ', 'Ν', 'Ξ', 'Ο', 'Π', 'Ρ', 'Σ', 'Τ', 'Υ', 'Φ', 'Χ', 'Ψ', 'Ω');
+  $letters_accent_to_uppercase = array('Α', 'Ε', 'Η', 'Ι', 'Ο', 'Υ', 'Ω');
+  $letters_upper_accent_to_uppercase = array('Α', 'Ε', 'Η', 'Ι', 'Ο', 'Υ', 'Ω');
+  $letters_upper_solvents_to_uppercase = array('Ι', 'Υ');
+  $letters_other_to_uppercase = array('Σ');
+
+  $lowercase = array_merge($letters, $letters_accent, $letters_upper_accent, $letters_upper_solvents, $letters_other);
+  $uppercase = array_merge($letters_to_uppercase, $letters_accent_to_uppercase, $letters_upper_accent_to_uppercase, $letters_upper_solvents_to_uppercase, $letters_other_to_uppercase);
+  $uppercase_string = str_replace($lowercase, $uppercase, $string);
+
+  return $uppercase_string;
+}
+
+
+/**
+ * @param string $string
+ * @return string $string
+ */
+function _clean_string($string){
+  // Do initial manipulations for $term_name.
+  // Remove whitespace
+  $string = preg_replace("/\s+/", " ", $string);
+
+  // Replace separators
+  $old = array("/",">","-","&gt;");
+  $new = array("|","|","|","|",);
+  $string = str_replace($old, $new, $string);
+  $string = str_replace("||", "|", $string);
+
+  // Convert to uppercase
+  $string = grstrtoupper($string);
+
+  return $string;
+}
+
+/**
+ * Get an number and return a formatted integer
+ * @param string $value
+ * @return string $value
+ */
+function _good_discount_value($value) {
+  // Remove whitespace
+  $value = preg_replace("/\s+/", " ", $value);
+
+  // Replace comma with dot
+  $value = str_replace(",", ".", $value);
+
+  // Cast to integer
+  $value = (int)$value;
+
+  // Exclude zero values
+  if ($value == 0) {
+    $value = "";
+  }
+
+  // Return integer formatted $value
+  return $value;
+}
+
+/*
+ * Returns an array after some manipulations.
+ * Used mainly for taxonomy term imports and multi values.
+ * Gets a $string and returns an $array
+ */
+function _good_string($string) {
+  // Remove whitespace
+  $string = preg_replace("/\s+/", " ", $string);
+
+  // Replace separators
+  $old = array("/",">","&gt;","-");
+  $new = array("|","|","|","|");
+  $string = str_replace($old, $new, $string);
+  $string = str_replace("||", "|", $string);
+
+  // Convert to uppercase
+  $string = grstrtoupper($string);
+
+  // Explode string on comma
+  $list_string = explode("|", $string);
+
+  // Trim array values
+  $list_string = array_map("trim", $list_string);
+
+  // Remove empty values
+  $list_string = array_filter($list_string);
+
+  // Return "good" array
+  return $list_string;
+}
+
+/**
+ * Get a string of categories and return a good array
+ * @param $string
+ * @return array
+ */
+function _good_string_size($string) {
+  // Remove whitespace
+  $string = preg_replace("/\s+/", " ", $string);
+
+  // Replace separators
+  $old = array(">" , "&gt;" , "-");
+  $new = array("," , "," , ",");
+  $string = str_replace($old, $new, $string);
+
+  // Convert to uppercase
+  $string = grstrtoupper($string);
+
+  // Explode string on comma
+  $list_string = explode(",", $string);
+
+  // Trim array values
+  $list_string = array_map("trim", $list_string);
+
+  // Remove empty values
+  $list_string = array_filter($list_string);
+
+  // Return "good" array
+  return $list_string;
+}
+
+/**
+ * Get a string of categories and return a good array
+ * @param $string
+ * @return array
+ */
+function _good_string_color($string) {
+  // Remove whitespace
+  $string = preg_replace("/\s+/", " ", $string);
+
+  // Replace separators
+  $old = array(">" , "&gt;" , "-");
+  $new = array("," , "," , ",");
+  $string = str_replace($old, $new, $string);
+
+  // Convert to uppercase
+  $string = grstrtoupper($string);
+
+  // Explode string on comma
+  $list_string = explode(",", $string);
+
+  // Trim array values
+  $list_string = array_map("trim", $list_string);
+
+  // Remove empty values
+  $list_string = array_filter($list_string);
+
+  // Remove Duplicates
+  $list_string = array_unique($list_string);
+  
+  // Return "good" array
+  return $list_string;
+}
+
+/**
+ * Replace a string with another using a replacement list
+ * Requires "values" module
+ * @param $string
+ * @param $list (the machine name of the Values list)
+ * @returns string $string
+ */
+function _replace_keywords($string, $list){
+  if(!is_string($string)) {
+    return;
+  }
+  // Get array of the $replaced values list
+  $replaced_array = values_load($list)->data;
+  //dpm($replaced_array);
+
+  // Create a new array using keys and values of sub-arrays
+  $keys = array();
+  $values = array();
+  $new_array = array();
+
+  $keys = array_map(function ($array) { return $array['key']; }, $replaced_array);
+  $values = array_map(function ($array) { return $array['value']; }, $replaced_array);
+  $new_array = array_combine($values,$keys);
+
+  // Uppercase $string
+  $string = grstrtoupper($string);
+
+  // Replace keywords
+  $string = str_replace(array_keys($new_array), array_values($new_array), $string);
+
+  // Return string with replaced keywords
+  return $string;
+}
+
+/**
+ * Exclude feed items which [Some_value] starts with some values
+ * Requires "values" module
+ * @param $string
+ * @param $list
+ * @returns number (0:excluded, 1:not_excluded)
+ */
+function _regex_values_excluded($string, $list){
+  // Get array of the $excluded values list
+  $excluded_array = values_load($list)->data;
+
+  // Loop through each value
+  foreach ($excluded_array as $row => $innerArray) {
+    foreach($innerArray as $key => $value) {
+      // Return 1 if $string starts with an excluded value
+      // dpm($excluded_array);
+      if (strpos($string, $value) === 0) {
+        return 0;
+      }
+    }
+  }
+  return 1;
+}
+
+/**
+ * Check if a taxonomy term has a boolean value etc.
+ * @param string $bundle
+ * @param string $term_name
+ * @return number (0:excluded, 1:not_excluded, 2:no_term_found,
+ * 3:arguments_missing)
+ */
+function _taxonomy_field_excluded($bundle, $term_name) {
+  if ($bundle == "" || $term_name == "") {
+    // Arguments missing
+    return 3;
+  }
+  if ($term_name != "") {
+
+    // Get term object from $term_name
+    $terms = taxonomy_get_term_by_name($term_name, $bundle);
+
+    // If term does not exist return 2.
+    if (empty($terms)) {
+      // Term not found
+      return 2;
+    }
+
+    // Loop through results (usually there is only 1 result)
+    foreach ($terms as $term) {
+      //dpm($term);
+      // Get field_excluded value
+      $excluded = field_get_items('taxonomy_term', $term, 'field_excluded');
+      $excluded_value = $excluded[0]['value'];
+
+      // Check if term has "field_excluded=1" (is excluded).
+      if ($excluded_value == 0) {
+        // Taxonomy term has field_excluded=0 (not excluded)
+        return 1;
+      } else if ($excluded_value == 1) {
+        // Taxonomy term has field_excluded=1 (excluded)
+        return 0;
+      }
+    }
+  }
+}
+
+/**
+ * Invoked before a feed item is saved.
+ *
+ * @param FeedsSource $source
+ *  FeedsSource object that describes the source that is being imported.
+ * @param $entity
+ *   The entity object.
+ * @param array $item
+ *   The parser result for this entity.
+ */
+function affiliobase_feeds_presave(FeedsSource $source, $entity, $item) {
+  // Set $importer_id
+  $importer_id = 'linkwise';
+
+  // Variables to test as excluded
+  $bundle = "unassigned"; // Vocabulary machine_name
+  $excluded_list = "excluded_categories";
+
+  // check that this is fired only for the indented importer
+  if($source->importer->id == $importer_id){
+    $category = $item['category'];
+
+    // Clean Category string
+    $category = _clean_string($category);
+
+    // Initial value for $remove
+    $remove = FALSE;
+
+    // Get result for regex excluded (using values module).
+    $regex_excluded = _regex_values_excluded($category, $excluded_list);
+    if ($regex_excluded == 0) {
+      $remove = TRUE;
+    } else {
+      // Get result for field_excluded of taxonomy term.
+      $field_excluded = _taxonomy_field_excluded($bundle, $category);
+      if ($field_excluded == 0) {
+        $remove = TRUE;
+      }
+    }
+
+    // Skip importing this $item if $remove==TRUE.
+    $entity->feeds_item->skip = $remove;
+    //drupal_set_message(t('Excluded category exists. Skipping.'), 'warning');
+  }
+}

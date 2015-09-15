@@ -1,0 +1,13 @@
+.region-pre-details {
+  @extend .node-product.node-teaser;
+}
+
+.view-id-products .region-pre-details {
+  float: left;
+  height: auto;
+  min-height: 625px;
+  background: $taxonomy_details_bg;
+  h2 {
+    margin-bottom: 10px;
+  }
+}

@@ -1,0 +1,46 @@
+diff --git a/contrib/current_search/plugins/current_search/item_active.inc b/contrib/current_search/plugins/current_search/item_active.inc
+index 4ba6839..15ed25b 100644
+--- a/contrib/current_search/plugins/current_search/item_active.inc
++++ b/contrib/current_search/plugins/current_search/item_active.inc
+@@ -56,7 +56,9 @@ class CurrentSearchItemActive extends CurrentSearchItem {
+       );
+ 
+       // Renders the active link.
+-      $items[] = theme('facetapi_link_active', $variables);
++      $row['data'] = theme('facetapi_link_active', $variables);
++      $row['class'][] = 'active';
++      $items[] = $row;
+     }
+ 
+     // If there are items, return the render array.
+diff --git a/contrib/current_search/plugins/current_search/item_group.inc b/contrib/current_search/plugins/current_search/item_group.inc
+index 7e2cc6c..796217c 100644
+--- a/contrib/current_search/plugins/current_search/item_group.inc
++++ b/contrib/current_search/plugins/current_search/item_group.inc
+@@ -58,7 +58,9 @@ class CurrentSearchGroup extends CurrentSearchItem {
+             'query' => $this->getQueryString($item, $adapter),
+           ),
+         );
+-        $items[] = theme('current_search_link_active', $variables);
++        $row['data'] = theme('current_search_link_active', $variables);
++        $row['class'][] = 'active';
++        $items[] = $row;
+       }
+ 
+       // If there are items, add the render array.
+diff --git a/plugins/facetapi/widget_links.inc b/plugins/facetapi/widget_links.inc
+index 0ae49b3..ecdd647 100644
+--- a/plugins/facetapi/widget_links.inc
++++ b/plugins/facetapi/widget_links.inc
+@@ -121,6 +121,11 @@ class FacetapiWidgetLinks extends FacetapiWidget {
+       // Add an ID to identify this link.
+       $variables['options']['attributes']['id'] = drupal_html_id('facetapi-link');
+ 
++      // If the item is active, the li is active
++      if ($item['#active']) {
++        $row['class'][] = 'active';
++      }
++
+       // If the item has no children, it is a leaf.
+       if (empty($item['#item_children'])) {
+         $row['class'][] = 'leaf';

@@ -1,0 +1,16 @@
+name = Affilio Text formats
+description = Text formats
+core = 7.x
+package = Affilio
+version = 7.x-1.0
+project = affilio_text_formats
+dependencies[] = ckeditor
+dependencies[] = features
+dependencies[] = filter
+features[ckeditor_profile][] = Advanced
+features[ckeditor_profile][] = CKEditor Global Profile
+features[ckeditor_profile][] = Full
+features[features_api][] = api:2
+features[filter][] = ds
+features[filter][] = html
+features[filter][] = plain_text

@@ -1,0 +1,65 @@
+// Layout
+.page {
+  margin: 0 auto;
+  padding: 10px;
+  overflow: hidden;
+  min-height: 300px;
+  background: $page_bg;
+}
+
+.page-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.sidebar-first {
+  .page {
+    //@include grid-span(12, 1);
+    max-width: 1400px;
+  }
+}
+
+.region-footer {
+  margin: 0 auto;
+  overflow: hidden;
+  max-width: 1400px;
+}
+
+#main-content {
+  @include grid-span(10, 3);
+}
+
+#sidebar-first {
+  @include grid-span(2, 1);
+}
+
+.sticky-sidebar .region-sidebar-first {
+  z-index: 3;
+}
+
+.sticky-wrapper {
+  height: auto !important;
+}
+
+.no-sidebars {
+  #main-content {
+    @include grid-span(12, 1);
+  }
+}
+
+.lr-2col {
+  .l-main {
+    @include grid-span(7, 1);
+  }
+  .l-sidebar {
+    @include grid-span(5, 8);
+  }
+}
+
+// Blog
+.page-blog,
+.node-type-blog {
+  .page {
+    max-width: 900px;
+  }
+}

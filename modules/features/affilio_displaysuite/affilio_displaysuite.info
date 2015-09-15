@@ -1,0 +1,9 @@
+name = Display suite settings for affilio distribution
+description = Export objects from CTools
+dependencies[] = ds
+package = Affilio
+core = 7.x
+
+version = 7.x-1.0
+project = affilio_displaysuite
+

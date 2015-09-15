@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Product Search API Index feature.
+ */
+
+include_once 'affilio_solrproducts.features.inc';

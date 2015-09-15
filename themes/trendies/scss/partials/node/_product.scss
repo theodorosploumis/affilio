@@ -1,0 +1,184 @@
+// Node Product - Teaser
+.node-product.node-teaser {
+  width: 260px;
+  height: 293px;
+  margin: 0 0 1em 0.5em;
+  border: 1px solid #ddd;
+  border-radius: $radius_normal;
+  padding: 5px;
+  background: $teaser_bg;
+  position: relative;
+}
+
+.teaser-top {
+  position: relative;
+  text-align: center;
+  .field-name-field-discount {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    width: 40px;
+    border-top: 1px solid #A9A9A9;
+    border-right: 1px solid #A9A9A9;
+    border-radius: 0 0 0 20px;
+    padding: 3px 0 3px 9px;
+    background: $discount_bg;
+    color: $discount_color;
+  }
+}
+
+.teaser-region-1 {
+  position: absolute;
+  margin: auto;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 60%;
+  height: 20%;
+  z-index: 20;
+  display: none;
+  a {
+    color: #fff;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-weight: bold;
+  }
+  > div {
+    float: left;
+    width: 75px;
+    height: 75px;
+    text-align: center;
+    margin-right: 10px;
+    border-radius: 6px;
+    text-indent: -9999px;
+  }
+  .field-name-more-link {
+    background: url(../images/more.png) center center no-repeat $details_bg;
+  }
+  .field-name-shop-link {
+    margin-right: 0;
+    background: url(../images/shop.png) center center no-repeat $buy_bg;
+    a{
+      color: $details_link;
+    }
+  }
+}
+
+.node-teaser:hover,
+.node-teaser:focus {
+  .teaser-region-1 {
+    display: block;
+  }
+}
+
+.teaser-region-2 {
+  position: absolute;
+  margin: auto;
+  bottom: 5px;
+  left: 0;
+  right: 0;
+  width: 93%;
+  height: 6%;
+  z-index: 10;
+  padding: 5px;
+  background: #f2f2f2;
+  border-radius: 0 0 $radius_normal $radius_normal;
+  //box-shadow: 0 -4px 16px 0 #ddd;
+  .small-title {
+    @include ellipsis;
+  }
+  .field-name-field-brand {
+    float: left;
+    clear: both;
+    width: 130px;
+    @include ellipsis;
+  }
+  .field-name-field-price-full {
+    opacity: 0.2;
+    text-decoration: line-through;
+  }
+  .field-name-field-price-full,
+  .field-name-field-price {
+    float: right;
+    font-weight: bold;
+    margin-left: 6px;
+  }
+}
+
+.field-name-field-images {
+  img {
+    max-width: 100%;
+    height: auto;
+    width: auto \9; /* Old IE */
+  }
+}
+
+// Node Product - Full
+.node-product.view-mode-full {
+  @include typecsset-font-size(16px);
+
+  div {
+    margin-bottom: 20px;
+  }
+  .field-name-field-price,
+  .field-name-field-price-full,
+  .field-name-field-discount {
+    float: left;
+    width: 30%;
+    padding: 5% 0;
+    text-align: center;
+    border-right: 1px solid #ddd;
+    @include typecsset-font-size($price_size);
+  }
+  .field-name-field-price {
+    border-right: 0;
+  }
+  .field-name-field-price-full {
+    text-decoration: line-through;
+    opacity: 0.2;
+  }
+  .field-name-field-discount {
+    opacity: 0.2;
+  }
+  .field-name-shop-link {
+    a {
+      //@include sassy-button("flat", 10px, 19px, $buy_bg);
+      display: block;
+      text-align: center;
+      clear: both;
+      background: url(../images/shop_small.png) no-repeat 25% center $buy_bg;
+      border-radius: 2 * $radius_normal;
+      color: #fff;
+      font-weight: bold;
+      padding: 20px;
+      @include typecsset-font-size(30px);
+    }
+  }
+  .field-label-above label {
+    display: block;
+    font-weight: bold;
+    border-bottom: 1px solid #F0F0F0;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .field.field-name-field-category {
+    a {
+      background: #E06;
+      color: #fff;
+      font-weight: bold;
+      padding: 6px;
+      border-right: 4px solid #000;
+      text-transform: uppercase;
+      &:nth-child(2) {
+        font-size: 0.8em;
+      }
+      &:nth-child(3) {
+        font-size: 0.6em;
+      }
+    }
+  }
+}

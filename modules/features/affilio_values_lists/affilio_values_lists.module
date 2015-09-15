@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Affilio Values lists feature.
+ */
+
+include_once 'affilio_values_lists.features.inc';

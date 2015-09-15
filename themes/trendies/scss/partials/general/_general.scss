@@ -1,0 +1,49 @@
+// General styles
+body {
+  font-family: $font_family;
+  background: $body_bg;
+  &.cke_editable {
+    background: #fff;
+  }
+}
+
+// link-colors($normal, $hover, $active, $visited, $focus)
+a {
+  @include link-colors($normal_link, $hover_link, $active_link, $visited_link, $focus_link);
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: normal;
+  a {
+    text-decoration: none;
+  }
+}
+
+ul,
+ol,
+ul li.leaf {
+  @include no-bullets;
+  margin-left: 0;
+}
+
+input[type=text],
+input[type=textarea],
+input[type=password] {
+  box-sizing : border-box;
+  width: 100%;
+}
+
+.field-label-inline {
+  label {
+    display: inline;
+  }
+}
+
+#backtotop {
+  z-index: 100;
+}

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Administration Views feature.
+ */
+
+include_once 'affilio_administration_views.features.inc';

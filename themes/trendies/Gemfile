@@ -1,0 +1,10 @@
+source "https://rubygems.org"
+
+gem "sass", "~>3.3"
+gem "sass-globbing", "~>1.1.1"
+gem "compass", "~>1.0"
+gem "breakpoint", "~>2.5.0"
+gem "singularitygs", "~>1.4"
+gem "autoprefixer-rails", "~>5.1.0"
+gem "sassy-buttons", "~>0.2.6"
+#gem 'oily_png'

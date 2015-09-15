@@ -1,0 +1,12 @@
+name = Subminimal
+description = Admin theme based on adminimal theme
+screenshot = screenshot.png
+base theme = adminimal
+
+core = 7.x
+
+;-------------- C S S -------------
+;stylesheets[all][] = css/style.css
+
+;-------------- JS -------------
+;scripts[] = js/script.js

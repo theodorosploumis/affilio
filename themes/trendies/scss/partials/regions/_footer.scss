@@ -1,0 +1,37 @@
+// Footer (region)
+.footer {
+  background: $footer_bg;
+  position: relative;
+  z-index: 5;
+  border-top: 4px solid #ddd;
+  //box-shadow: 1px 0 20px #B6B6B6;
+}
+
+.region-footer {
+  padding: 40px 0;
+  color: #fff;
+  text-align: center;
+  a {
+    color: #fff;
+  }
+}
+
+
+// Categories menu
+#block-menu-menu-categories {
+  > ul > li {
+    height: 300px;
+    @include grid-span(1.5);
+    float: left;
+    ul {
+      //padding-left: 10px;
+      font-size: smaller;
+    }
+  }
+}
+
+// Copyright block
+#block-block-4 {
+  text-align: center;
+  clear: both;
+}

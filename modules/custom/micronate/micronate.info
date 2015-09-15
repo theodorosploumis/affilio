@@ -1,0 +1,8 @@
+name = Migrate Cron
+description = Run migrate tasks with cron
+package = Migrate
+dependencies[] = migrate
+dependencies[] = xmlgrate
+core = 7.x
+
+version = "7.x-1.0"

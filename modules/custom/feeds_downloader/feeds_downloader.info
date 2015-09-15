@@ -1,0 +1,6 @@
+name = Feeds Downloader
+description = Download external files using cron
+package = Feeds
+core = 7.x
+dependencies[] = values
+varsion = 7.x-1.0

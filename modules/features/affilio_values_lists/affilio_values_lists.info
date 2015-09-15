@@ -1,0 +1,15 @@
+name = Affilio Values lists
+description = Values lists used as input for several tasks.
+core = 7.x
+package = Affilio
+version = 7.x-1.0
+project = affilio_values_lists
+dependencies[] = ctools
+dependencies[] = values
+features[ctools][] = values:default_values_sets:1
+features[features_api][] = api:2
+features[values_sets][] = affiliate_feeds
+features[values_sets][] = excluded_categories
+features[values_sets][] = replace_categories
+features[values_sets][] = replace_colors
+features[values_sets][] = replace_size

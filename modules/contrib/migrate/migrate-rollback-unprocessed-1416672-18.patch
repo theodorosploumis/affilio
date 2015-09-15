@@ -1,0 +1,933 @@
+diff --git a/includes/map.inc b/includes/map.inc
+index a2e2bfb..0a60d71 100644
+--- a/includes/map.inc
++++ b/includes/map.inc
+@@ -11,18 +11,49 @@
+  */
+ abstract class MigrateMap implements Iterator {
+   /**
+-   * Codes reflecting the current status of a map row.
++   * Map row last import status: Import sucessful.
+    */
+   const STATUS_IMPORTED = 0;
++  /**
++   * DEPRECATED Map row last import status: Needs Update.
++   * @todo Remove this value in next version: 2.7 or 3.0.
++   */
+   const STATUS_NEEDS_UPDATE = 1;
++  /**
++   * Map row last import status: Import sucessful. Ignored during last import.
++   */
+   const STATUS_IGNORED = 2;
++  /**
++   * Map row last import status: Failed during last import.
++   */
+   const STATUS_FAILED = 3;
++  /**
++   * Map row last import status: Import sucessful. Skipped due to idlist,
++   * track_changes, or highwater during last import.
++   */
++  const STATUS_SKIPPED = 4;
++  /**
++   * Map row last import status: Unprocessed. Optionally set at the start of a
++   * re-import or migration update to track unprocessed rows.
++   */
++  const STATUS_UNPROCESSED = 5;
+ 
+   /**
+-   * Codes reflecting how to handle the destination item on rollback.
+-   *
++   * Map row needs update: False, update not needed.
++   */
++  const NEEDS_UPDATE_FALSE = 0;
++  /**
++   * Map row needs update: True, update needed.
++   */
++  const NEEDS_UPDATE_TRUE = 1;
++
++  /**
++   * Map row handle rollback: Delete on rollback.
+    */
+   const ROLLBACK_DELETE = 0;
++  /**
++   * Map row handle rollback: Preserve on rollback.
++   */
+   const ROLLBACK_PRESERVE = 1;
+ 
+   /**
+@@ -56,14 +87,14 @@ abstract class MigrateMap implements Iterator {
+    *
+    * @param $source_row
+    * @param $dest_ids
+-   * @param $status
++   * @param $import_status
++   * @param $needs_update
+    * @param $rollback_action
+    * @param $hash
+    */
+   abstract public function saveIDMapping(stdClass $source_row, array $dest_ids,
+-    $status = MigrateMap::STATUS_IMPORTED,
+-    $rollback_action = MigrateMap::ROLLBACK_DELETE, $hash = NULL);
+-
++    $import_status = NULL, $needs_update = NULL, $rollback_action = NULL,
++    $hash = NULL);
+   /**
+    * Record a message related to a source record
+    *
+@@ -77,6 +108,11 @@ abstract class MigrateMap implements Iterator {
+   abstract public function saveMessage($source_key, $message, $level = MigrationBase::MESSAGE_ERROR);
+ 
+   /**
++   * Prepares this migration to track unprocessed records during the next import.
++   */
++  abstract public function prepareUnprocessed();
++
++  /**
+    * Prepare to run a full update - mark all previously-imported content as
+    * ready to be re-imported.
+    */
+@@ -140,6 +176,11 @@ abstract class MigrateMap implements Iterator {
+   abstract public function getRowsNeedingUpdate($count);
+ 
+   /**
++   * Retrieve an array of map rows marked as needing update.
++   */
++  abstract public function getRowsofStatus($import_status);
++
++  /**
+    * Given a (possibly multi-field) destination key, return the (possibly multi-field)
+    * source key mapped to it.
+    *
+diff --git a/includes/migration.inc b/includes/migration.inc
+index 3198cb7..ff46655 100644
+--- a/includes/migration.inc
++++ b/includes/migration.inc
+@@ -78,7 +78,7 @@ abstract class Migration extends MigrationBase {
+    *
+    * @var int
+    */
+-  public $needsUpdate = MigrateMap::STATUS_IMPORTED;
++  public $needsUpdate = MigrateMap::NEEDS_UPDATE_FALSE;
+ 
+   /**
+    * The default rollback action for this migration. Can be overridden on
+@@ -529,10 +529,40 @@ abstract class Migration extends MigrationBase {
+   protected function rollback() {
+     $return = MigrationBase::RESULT_COMPLETED;
+     $itemlimit = $this->getItemLimit();
+-    $idlist = $this->getOption('idlist');
++
++    // idlist is overwritten by needs-update and unprocessed options.
++    if ($this->getOption('needs-update') || $this->getOption('unprocessed')) {
++      if ($this->getOption('needs-update')) {
++        $map_rows = $this->map->getRowsNeedingUpdate($itemlimit);
++      }
++      else {
++        $map_rows = $this->map->getRowsofStatus(MigrateMap::STATUS_UNPROCESSED);
++      }
++      // Process the database results into the correct format.
++      $idlist = array();
++      foreach ($map_rows as $row) {
++       $idlist[] = $row->sourceid1;
++      }
++      // Exit quickly if the list is empty.
++      if (empty($idlist)) {
++        $message = t('No unprocessed objects or objects needed update found in !name', array('!name' => $this->machineName));
++        $type = 'completed';
++        self::displayMessage($message, $type);
++        return $return;
++      }
++    }
++    else {
++      // Load the regular idlist data only if the other options aren't set.
++      $idlist = $this->getOption('idlist');
++    }
++    // If there is data in idlist, process it.
+     if ($idlist) {
++      // If stored as a string, explode to an array.
++      if (!is_array($idlist)) {
++        $idlist = explode(',', $idlist);
++      }
+       // Make the IDs keys, to more easily identify them
+-      $idlist = array_flip(explode(',', $idlist));
++      $idlist = array_flip($idlist);
+     }
+ 
+     if (method_exists($this->destination, 'bulkRollback')) {
+@@ -675,9 +705,8 @@ abstract class Migration extends MigrationBase {
+     $this->progressMessage($return);
+ 
+     // If we're using highwater marks, reset at completion of a full rollback
+-    // TODO: What about partial rollbacks? Probably little we can do to make
+-    // that work cleanly...
+-    if ($this->highwaterField) {
++    // unless do-not-reset-highwater is set.
++    if ($this->highwaterField && !$this->getOption('do-not-reset-highwater')) {
+       $this->saveHighwater('', TRUE);
+     }
+     return $return;
+@@ -714,15 +743,15 @@ abstract class Migration extends MigrationBase {
+         migrate_instrument_stop('destination import');
+         if ($ids) {
+           $this->map->saveIDMapping($this->sourceValues, $ids,
+-            $this->needsUpdate, $this->rollbackAction,
+-            $data_row->migrate_map_hash);
++            MigrateMap::STATUS_IMPORTED, $this->needsUpdate,
++            $this->rollbackAction, $data_row->migrate_map_hash);
+           $this->successes_since_feedback++;
+           $this->total_successes++;
+         }
+         else {
+           $this->map->saveIDMapping($this->sourceValues, array(),
+-            MigrateMap::STATUS_FAILED, $this->rollbackAction,
+-            $data_row->migrate_map_hash);
++            MigrateMap::STATUS_FAILED, MigrateMap::NEEDS_UPDATE_FALSE,
++            $this->rollbackAction, $data_row->migrate_map_hash);
+           if ($this->map->messageCount() == 0) {
+             $message = t('New object was not saved, no error provided');
+             $this->saveMessage($message);
+@@ -732,14 +761,15 @@ abstract class Migration extends MigrationBase {
+       }
+       catch (MigrateException $e) {
+         $this->map->saveIDMapping($this->sourceValues, array(),
+-          $e->getStatus(), $this->rollbackAction, $data_row->migrate_map_hash);
++          $e->getStatus(), MigrateMap::NEEDS_UPDATE_FALSE,
++          $this->rollbackAction, $data_row->migrate_map_hash);
+         $this->saveMessage($e->getMessage(), $e->getLevel());
+         self::displayMessage($e->getMessage());
+       }
+       catch (Exception $e) {
+         $this->map->saveIDMapping($this->sourceValues, array(),
+-          MigrateMap::STATUS_FAILED, $this->rollbackAction,
+-          $data_row->migrate_map_hash);
++          MigrateMap::STATUS_FAILED, MigrateMap::NEEDS_UPDATE_FALSE,
++          $this->rollbackAction, $data_row->migrate_map_hash);
+         $this->handleException($e);
+       }
+       $this->total_processed++;
+@@ -1062,6 +1092,15 @@ abstract class Migration extends MigrationBase {
+   }
+ 
+   /**
++   * Prepares this migration to track unprocessed content.
++   * Once the import has completed, any content still marked as unprocessed
++   * can be considered deleted from the source.
++   */
++  public function prepareUnprocessed() {
++    $this->map->prepareUnprocessed();
++  }
++
++  /**
+    * Outputs a progress message, reflecting the current status of a migration process.
+    *
+    * @param int $result
+@@ -1080,44 +1119,54 @@ abstract class Migration extends MigrationBase {
+     if ($this->status == Migration::STATUS_IMPORTING) {
+       switch ($result) {
+         case Migration::RESULT_COMPLETED:
+-          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored) in !time sec (!perminute/min) - done with '!name'";
++          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored, !skipped skipped) in !time sec (!perminute/min) - done with '!name'";
+           $type = 'completed';
+           break;
+         case Migration::RESULT_FAILED:
+-          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored) in !time sec (!perminute/min) - failure with '!name'";
++          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored, !skipped skipped) in !time sec (!perminute/min) - failure with '!name'";
+           $type = 'failed';
+           break;
+         case Migration::RESULT_INCOMPLETE:
+-          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored) in !time sec (!perminute/min) - continuing with '!name'";
++          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored, !skipped skipped) in !time sec (!perminute/min) - continuing with '!name'";
+           $type = 'status';
+           break;
+         case Migration::RESULT_STOPPED:
+-          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored) in !time sec (!perminute/min) - stopped '!name'";
++          $basetext = "Processed !numitems (!created created, !updated updated, !failed failed, !ignored ignored, !skipped skipped) in !time sec (!perminute/min) - stopped '!name'";
+           $type = 'warning';
+           break;
+       }
+     }
+     else {
++      // Display rollback object details
++      if($this->getOption('needs-update')) {
++        $object_detail = "objects needing update";
++      }
++      elseif($this->getOption('unprocessed')) {
++        $object_detail = "unprocessed objects";
++      }
++      else {
++        $object_detail = "objects";
++      }
+       switch ($result) {
+         case Migration::RESULT_COMPLETED:
+-          $basetext = "Rolled back !numitems in !time sec (!perminute/min) - done with '!name'";
++          $basetext = "Rolled back !numitems " . $object_detail . " in !time sec (!perminute/min) - done with '!name'";
+           $type = 'completed';
+           break;
+         case Migration::RESULT_FAILED:
+-          $basetext = "Rolled back !numitems in !time sec (!perminute/min) - failure with '!name'";
++          $basetext = "Rolled back !numitems " . $object_detail . " in !time sec (!perminute/min) - failure with '!name'";
+           $type = 'failed';
+           break;
+         case Migration::RESULT_INCOMPLETE:
+-          $basetext = "Rolled back !numitems in !time sec (!perminute/min) - continuing with '!name'";
++          $basetext = "Rolled back !numitems " . $object_detail . " in !time sec (!perminute/min) - continuing with '!name'";
+           $type = 'status';
+           break;
+         case Migration::RESULT_STOPPED:
+-          $basetext = "Rolled back !numitems in !time sec (!perminute/min) - stopped '!name'";
++          $basetext = "Rolled back !numitems " . $object_detail . " in !time sec (!perminute/min) - stopped '!name'";
+           $type = 'warning';
+           break;
+       }
+     }
+-    $numitems = $this->processed_since_feedback + $this->source->getIgnored();
++    $numitems = $this->processed_since_feedback + $this->source->getIgnored() + $this->source->getSkipped();
+     $message = t($basetext,
+         array('!numitems' => $numitems,
+               '!successes' => $this->successes_since_feedback,
+@@ -1125,6 +1174,7 @@ abstract class Migration extends MigrationBase {
+               '!created' => $this->destination->getCreated(),
+               '!updated' => $this->destination->getUpdated(),
+               '!ignored' => $this->source->getIgnored(),
++              '!skipped' => $this->source->getSkipped(),
+               '!time' => $time,
+               '!perminute' => $perminute,
+               '!name' => $this->machineName));
+@@ -1379,7 +1429,7 @@ abstract class Migration extends MigrationBase {
+           if ($source_migration->machineName == $this->machineName) {
+             if (!array_diff($source_key, $this->currentSourceKey())) {
+               $destids = array();
+-              $this->needsUpdate = MigrateMap::STATUS_NEEDS_UPDATE;
++              $this->needsUpdate = MigrateMap::NEEDS_UPDATE_TRUE;
+               break;
+             }
+           }
+@@ -1485,7 +1535,8 @@ abstract class Migration extends MigrationBase {
+           $data_row->$key = $source_key[$i++];
+         }
+         $this->map->saveIDMapping($data_row, $destids,
+-          MigrateMap::STATUS_NEEDS_UPDATE, $this->defaultRollbackAction);
++          MigrateMap::STATUS_IMPORTED, MigrateMap::NEEDS_UPDATE_TRUE,
++          $this->defaultRollbackAction);
+       }
+     }
+     else {
+diff --git a/includes/source.inc b/includes/source.inc
+index 4a1dc21..c4998ba 100644
+--- a/includes/source.inc
++++ b/includes/source.inc
+@@ -55,6 +55,22 @@ abstract class MigrateSource implements Iterator {
+   }
+ 
+   /**
++   * Number of rows intentionally skipped
++   *
++   * Reasons for skipping:
++   * Not in idList.
++   * Tracking changes, but there is no change.
++   * Highwater disabled and not tracking changes.
++   * Highwater enabled, but not reached.
++   *
++   * @var int
++   */
++   protected $numSkipped = 0;
++   public function getSkipped() {
++     return $this->numSkipped;
++  }
++
++  /**
+    * Number of rows we've at least looked at.
+    *
+    * @var int
+@@ -246,6 +262,7 @@ abstract class MigrateSource implements Iterator {
+     $this->activeMap = $this->activeMigration->getMap();
+     $this->numProcessed = 0;
+     $this->numIgnored = 0;
++    $this->numSkipped = 0;
+     $this->highwaterField = $this->activeMigration->getHighwaterField();
+     if (!empty($this->highwaterField)) {
+       $this->originalHighwater = $this->activeMigration->getHighwater();
+@@ -301,6 +318,7 @@ abstract class MigrateSource implements Iterator {
+         }
+         else {
+           // Not in the list, skip it
++          $this->skippedRow($row);
+           continue;
+         }
+       }
+@@ -310,7 +328,7 @@ abstract class MigrateSource implements Iterator {
+         // Fall through
+       }
+       // 3. If the row is marked as needing update, pass it.
+-      elseif ($row->migrate_map_needs_update == MigrateMap::STATUS_NEEDS_UPDATE) {
++      elseif ($row->migrate_map_needs_update == MigrateMap::NEEDS_UPDATE_TRUE) {
+         // Fall through
+       }
+       // 4. At this point, we have a row which has previously been imported and
+@@ -328,16 +346,18 @@ abstract class MigrateSource implements Iterator {
+             }
+             else {
+               // No change, skip it.
++              $this->skippedRow($row);
+               continue;
+             }
+           }
+           else {
+-            // prepareRow() told us to skip it.
++            // prepareRow() told us to skip it, row marked ignored.
+             continue;
+           }
+         }
+         else {
+           // No highwater and not tracking changes, skip.
++          $this->skippedRow($row);
+           continue;
+         }
+       }
+@@ -358,6 +378,7 @@ abstract class MigrateSource implements Iterator {
+           }
+           else {
+             // Skip
++            $this->skippedRow($row);
+             continue;
+           }
+         }
+@@ -373,6 +394,7 @@ abstract class MigrateSource implements Iterator {
+           break;
+         }
+         else {
++          // The row has already been marked ignored.
+           $this->currentRow = NULL;
+         }
+       }
+@@ -401,7 +423,7 @@ abstract class MigrateSource implements Iterator {
+       $this->activeMigration->getMap()->delete($this->currentKey, TRUE);
+       $this->activeMigration->saveQueuedMessages();
+       $this->activeMigration->getMap()->saveIDMapping($row, array(),
+-        MigrateMap::STATUS_IGNORED, $this->activeMigration->rollbackAction);
++        MigrateMap::STATUS_IGNORED, NULL, $this->activeMigration->rollbackAction);
+       $this->numIgnored++;
+       $this->currentRow = NULL;
+       $this->currentKey = NULL;
+@@ -466,4 +488,16 @@ abstract class MigrateSource implements Iterator {
+     migrate_instrument_stop('MigrateSource::hash');
+     return $hash;
+   }
+-}
++
++  /**
++   * Helper function to mark rows skipped.
++   *
++   * @param $row
++   */
++  protected function skippedRow($row) {
++    $this->numSkipped++;
++    $this->activeMigration->getMap()->saveIDMapping($row, array(),
++      MigrateMap::STATUS_SKIPPED, MigrateMap::NEEDS_UPDATE_FALSE,
++      $this->activeMigration->rollbackAction);
++  }
++}
+\ No newline at end of file
+diff --git a/migrate.drush.inc b/migrate.drush.inc
+index 272cde6..c9f64aa 100644
+--- a/migrate.drush.inc
++++ b/migrate.drush.inc
+@@ -130,7 +130,11 @@ function migrate_drush_command() {
+   );
+   $items['migrate-rollback'] = array(
+     'description' => 'Roll back the destination objects from a given migration',
+-    'options' => $migration_options,
++    'options' => $migration_options + array(
++      'needs-update' => 'Only roll back objects marked needs-update',
++      'unprocessed' => 'Only roll back objects with a status of unprocessed.',
++      'do-not-reset-highwater' => 'Do not reset the highwater field value after the roll back. Generally used with partial roll backs.',
++    ),
+     // We will bootstrap to login from within the command callback.
+     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_FULL,
+     'arguments' => array(
+@@ -146,9 +150,10 @@ function migrate_drush_command() {
+     'drupal dependencies' => array('migrate'),
+     'aliases' => array('mr'),
+   );
++  $migration_options['track-unprocessed'] = 'Set the status of all mapped rows to unprocessed. When the import process is complete, any unprocessed records can be considered missing from the source.';
+   $migration_options['update'] = 'In addition to processing unprocessed items from the source, update previously-imported items with new data';
+   $migration_options['needs-update'] =
+-    'Reimport up to 10K records where needs_update=1. This option is only needed when your Drupal DB is on a different DB server from your source data. Otherwise, these records get migrated with just migrate-import.';
++    'Reimport up to 10K records where needs_update = 1(NEEDS_UPDATE_TRUE) . This option is only needed when your Drupal DB is on a different DB server from your source data. Otherwise, these records get migrated with just migrate-import.';
+   $migration_options['stop'] = 'Stop specified migration(s) if applicable.';
+   $migration_options['rollback'] = 'Rollback specified migration(s) if applicable.';
+   $migration_options['file_function'] = 'Override file function to use when migrating images.';
+@@ -248,7 +253,7 @@ function migrate_drush_command() {
+  */
+ function drush_migrate_get_options() {
+   $options = array();
+-  $blacklist = array('stop', 'rollback', 'update', 'all', 'group');
++  $blacklist = array('stop', 'rollback', 'update', 'all', 'group', 'track-unprocessed');
+   $command = drush_parse_command();
+   foreach ($command['options'] as $key => $value) {
+     // Strip leading --
+@@ -894,11 +899,26 @@ function drush_migrate_rollback($args = NULL) {
+         break;
+     }
+ 
++    if (drush_get_option('do-not-reset-highwater', FALSE)) {
++      $options['do-not-reset-highwater'] = TRUE;
++    }
++
++    if (drush_get_option('needs-update', FALSE)) {
++      $message = "Rolling back objects needing update in '!description' migration";
++      $options['needs-update'] = TRUE;
++    }
++    elseif (drush_get_option('unprocessed', FALSE)) {
++      $message = "Rolling back unprocessed objects in '!description' migration";
++      $options['unprocessed'] = TRUE;
++    }
++    else {
++      $message = "Rolling back all objects in '!description' migration";
++    }
++
+     foreach ($migrations as $migration) {
+-      drush_log(dt("Rolling back '!description' migration",
+-        array('!description' => $migration->getMachineName())));
++      drush_log(dt($message, array('!description' => $migration->getMachineName())));
+       $return = $migration->processRollback($options);
+-      // If it couldn't finish (presumably because it was appraoching memory_limit),
++      // If it couldn't finish (presumably because it was approaching memory_limit),
+       // continue in a subprocess
+       if ($return == MigrationBase::RESULT_INCOMPLETE) {
+         drush_migrate_invoke_process();
+@@ -1200,13 +1220,16 @@ function drush_migrate_import($args = NULL) {
+       if (drush_get_option('update') && !$idlist) {
+         $migration->prepareUpdate();
+       }
++      if (drush_get_option('track-unprocessed') && !$idlist) {
++        $migration->prepareUnprocessed();
++      }
+       if (drush_get_option('needs-update')) {
+         $map_rows = $migration->getMap()->getRowsNeedingUpdate(10000);
+         $idlist = array();
+         foreach ($map_rows as $row) {
+           $idlist[] = $row->sourceid1;
+         }
+-        $options['idlist'] = implode(',', $idlist);
++        $options['idlist'] = $idlist;
+       }
+       // The goal here is to do one migration in the parent process and then
+       // spawn subshells as needed when memory is depleted. We show feedback
+diff --git a/migrate.install b/migrate.install
+index 878f50a..eeef383 100644
+--- a/migrate.install
++++ b/migrate.install
+@@ -577,3 +577,47 @@ function migrate_update_7207() {
+     }
+   }
+ }
++
++/**
++ * Separate needs_update flag so it no longer overwrites the row import status.
++ */
++function migrate_update_7208() {
++  foreach (db_find_tables('migrate_map_%') as $tablename) {
++    if (db_field_exists($tablename, 'needs_update') && !db_field_exists($tablename, 'import_status')) {
++      // Rename the current needs_update field to import_status
++      db_change_field($tablename, 'needs_update', 'import_status', array(
++        'type' => 'int',
++        'size' => 'medium',
++        'unsigned' => TRUE,
++        'not null' => TRUE,
++        'default' => MigrateMap::STATUS_IMPORTED,
++        'description' => 'Row import status: imported, skipped, ignored, failed, and unprocessed',
++      ));
++      // Create a new needs_update flag field.
++      db_add_field($tablename, 'needs_update', array(
++        'type' => 'int',
++        'size' => 'tiny',
++        'unsigned' => TRUE,
++        'not null' => TRUE,
++        'default' => MigrateMap::NEEDS_UPDATE_FALSE,
++        'description' => 'Flag indicating whether to force an update on the next import',
++      ));
++      // Set needs_update = NEEDS_UPDATE_FALSE where import_status = 1 (The old STATUS_NEEDS_UPDATE)
++      db_update($tablename)
++        ->fields(array(
++          'needs_update' => MigrateMap::NEEDS_UPDATE_TRUE,
++        ))
++        ->condition('import_status', 1)
++        ->execute();
++      // Set import_status = STATUS_IMPORTED where import_status = 1 (The old STATUS_NEEDS_UPDATE)
++      db_update($tablename)
++        ->fields(array(
++          'import_status' => MigrateMap::STATUS_IMPORTED,
++        ))
++        ->condition('import_status', 1)
++        ->execute();
++    }
++  }
++  $ret = t('Separated needs_update flag so it no longer overwrites the row import status.');
++  return $ret;
++}
+diff --git a/migrate_example/beer.inc b/migrate_example/beer.inc
+index 702e894..7127b9e 100644
+--- a/migrate_example/beer.inc
++++ b/migrate_example/beer.inc
+@@ -342,9 +342,12 @@ class BeerNodeMigration extends BasicExampleMigration {
+ 
+     // Passing the cache_counts option means the source count (shown in
+     // drush migrate-status) will be cached - this can be very handy when
+-    // dealing with a slow source database.
++    // dealing with a slow source database. Passing the track_changes option
++    // means a hash will be created for each row on save. When the migration
++    // is re-run a new hash for the row will be prepared and compared to the
++    // stored value. If the hashes differ the node will be updated.
+     $this->source = new MigrateSourceSQL($query, array(), $count_query,
+-      array('cache_counts' => TRUE));
++      array('cache_counts' => FALSE, 'track_changes' => TRUE));
+ 
+     // Set up our destination - nodes of type migrate_example_beer
+     $this->destination = new MigrateDestinationNode('migrate_example_beer');
+diff --git a/plugins/sources/sql.inc b/plugins/sources/sql.inc
+index 3372b47..108820d 100644
+--- a/plugins/sources/sql.inc
++++ b/plugins/sources/sql.inc
+@@ -300,7 +300,7 @@ class MigrateSourceSQL extends MigrateSource {
+         $alias = $this->query->leftJoin($this->activeMap->getQualifiedMapTable(),
+                                         'map', $map_join);
+         $conditions->isNull($alias . '.sourceid1');
+-        $conditions->condition($alias . '.needs_update', MigrateMap::STATUS_NEEDS_UPDATE);
++        $conditions->condition($alias . '.needs_update', MigrateMap::NEEDS_UPDATE_TRUE);
+         $condition_added = TRUE;
+ 
+         // And as long as we have the map table, add its data to the row.
+diff --git a/plugins/sources/sqlmap.inc b/plugins/sources/sqlmap.inc
+index 0ee2d10..922d286 100644
+--- a/plugins/sources/sqlmap.inc
++++ b/plugins/sources/sqlmap.inc
+@@ -145,13 +145,21 @@ class MigrateSQLMap extends MigrateMap {
+           $mapkey = 'destid' . $count++;
+           $fields[$mapkey] = $field_schema;
+         }
++        $fields['import_status'] = array(
++          'type' => 'int',
++          'size' => 'medium',
++          'unsigned' => TRUE,
++          'not null' => TRUE,
++          'default' => MigrateMap::STATUS_UNPROCESSED,
++          'description' => 'Row import status: imported, skipped, ignored, failed, and unprocessed',
++        );
+         $fields['needs_update'] = array(
+           'type' => 'int',
+           'size' => 'tiny',
+           'unsigned' => TRUE,
+           'not null' => TRUE,
+-          'default' => MigrateMap::STATUS_IMPORTED,
+-          'description' => 'Indicates current status of the source row',
++          'default' => MigrateMap::NEEDS_UPDATE_FALSE,
++          'description' => 'Flag indicating whether to force an update on the next import',
+         );
+         $fields['rollback_action'] = array(
+           'type' => 'int',
+@@ -172,7 +180,7 @@ class MigrateSQLMap extends MigrateMap {
+           'type' => 'varchar',
+           'length' => '32',
+           'not null' => FALSE,
+-          'description' => 'Hash of source row data, for detecting changes',
++          'description' => 'Hash of source row data for detecting changes',
+         );
+         $schema = array(
+           'description' => t('Mappings from source key to destination key'),
+@@ -276,13 +284,36 @@ class MigrateSQLMap extends MigrateMap {
+    * @param int $count
+    *  Maximum rows to return; defaults to 10,000
+    * @return array
+-   *  Array of map row objects with needs_update==1.
++   *  Array of map row objects with needs_update==MigrateMap::NEEDS_UPDATE_TRUE.
++   */
++  public function getRowsNeedingUpdate($count = 10000) {
++    $rows = array();
++    $result = $this->connection->select($this->mapTable, 'map')
++                      ->fields('map')
++                      ->condition('needs_update', MigrateMap::NEEDS_UPDATE_TRUE)
++                      ->range(0, $count)
++                      ->execute();
++    foreach ($result as $row) {
++      $rows[] = $row;
++    }
++    return $rows;
++  }
++
++  /**
++   * Retrieve an array of map rows marked with the specified status.
++   *
++   * @param int $import_status
++   *  A map row status value; MigrateMap::STATUS_*.
++   * @param int $count
++   *  Maximum rows to return; defaults to 10,000
++   * @return array
++   *  Array of map row objects.
+    */
+-  public function getRowsNeedingUpdate($count) {
++  public function getRowsofStatus($import_status, $count = 10000) {
+     $rows = array();
+     $result = $this->connection->select($this->mapTable, 'map')
+                       ->fields('map')
+-                      ->condition('needs_update', MigrateMap::STATUS_NEEDS_UPDATE)
++                      ->condition('import_status', $import_status)
+                       ->range(0, $count)
+                       ->execute();
+     foreach ($result as $row) {
+@@ -336,26 +367,30 @@ class MigrateSQLMap extends MigrateMap {
+   }
+ 
+   /**
+-   * Called upon import of one record, we record a mapping from the source key
+-   * to the destination key. Also may be called, setting the third parameter to
+-   * NEEDS_UPDATE, to signal an existing record should be remigrated.
++   * Creates or updates the mapping data for one record.
+    *
+    * @param stdClass $source_row
+    *  The raw source data. We use the key map derived from the source object
+    *  to get the source key values.
+    * @param array $dest_ids
+    *  The destination key values.
++   * @param int $import_status
++   *  Status of the source row in the map. Pass NULL to leave unchanged on
++   *  existing rows, defaults to STATUS_IMPORTED for new rows.
+    * @param int $needs_update
+-   *  Status of the source row in the map. Defaults to STATUS_IMPORTED.
++   *  Flag specifying whether the destinate should be updated. Pass NULL to leave
++   *  unchanged on existing rows, defaults to NEEDS_UPDATE_FALSE for new rows.
+    * @param int $rollback_action
+-   *  How to handle the destination object on rollback. Defaults to
+-   *  ROLLBACK_DELETE.
++   *  How to handle the destination object on rollback. Pass NULL to leave
++   *  unchanged on existing rows, defaults to ROLLBACK_DELETE for new rows.
+    * $param string $hash
+-   *  If hashing is enabled, the hash of the raw source row.
++   *  If hashing is enabled, the hash of the raw source row. Pass NULL to leave
++   *  unchanged on existing rows.
++   *
+    */
+   public function saveIDMapping(stdClass $source_row, array $dest_ids,
+-      $needs_update = MigrateMap::STATUS_IMPORTED,
+-      $rollback_action = MigrateMap::ROLLBACK_DELETE, $hash = NULL) {
++      $import_status = NULL, $needs_update = NULL, $rollback_action = NULL,
++      $hash = NULL) {
+     migrate_instrument_start('saveIDMapping');
+     // Construct the source key
+     $keys = array();
+@@ -371,11 +406,33 @@ class MigrateSQLMap extends MigrateMap {
+       $keys[$key_name] = $source_row->$field_name;
+     }
+ 
+-    $fields = array(
+-      'needs_update' => (int)$needs_update,
+-      'rollback_action' => (int)$rollback_action,
+-      'hash' => $hash,
+-    );
++    // If any of the field variables aren't NULL, update them. NULL values are
++    // set to database defaults for new records.
++    $fields = array();
++    if (!is_null($needs_update)) {
++      // TODO: Remove this check once a breaking API change occurs.
++      if ($needs_update == MigrateMap::NEEDS_UPDATE_FALSE ||
++          $needs_update == MigrateMap::NEEDS_UPDATE_TRUE) {
++        // If valid, store in needs_update and assume imported.
++        $fields['needs_update'] = $needs_update;
++        $fields['import_status'] = MigrateMap::STATUS_IMPORTED;
++      }
++      else {
++        // If invalid, store in import_status and assume no update needed.
++        $fields['needs_update'] = MigrateMap::NEEDS_UPDATE_FALSE;
++        $fields['import_status'] = $needs_update;
++      }
++    }
++    if (!is_null($rollback_action)) {
++      $fields['rollback_action'] = $rollback_action;
++    }
++    if (!is_null($hash)) {
++      $fields['hash'] = $hash;
++    }
++    if (!is_null($import_status)) {
++      $fields['import_status'] = $import_status;
++    }
++
+     $count = 1;
+     if (!empty($dest_ids)) {
+       foreach ($dest_ids as $dest_id) {
+@@ -427,13 +484,22 @@ class MigrateSQLMap extends MigrateMap {
+   }
+ 
+   /**
++   * Prepares this migration to track unprocessed records during the next import.
++   */
++  public function prepareUnprocessed() {
++    $this->connection->update($this->mapTable)
++    ->fields(array('import_status' => MigrateMap::STATUS_UNPROCESSED))
++    ->execute();
++  }
++
++  /**
+    * Prepares this migration to run as an update - that is, in addition to
+    * unmigrated content (source records not in the map table) being imported,
+    * previously-migrated content will also be updated in place.
+    */
+   public function prepareUpdate() {
+     $this->connection->update($this->mapTable)
+-    ->fields(array('needs_update' => MigrateMap::STATUS_NEEDS_UPDATE))
++    ->fields(array('needs_update' => MigrateMap::NEEDS_UPDATE_TRUE))
+     ->execute();
+   }
+ 
+@@ -458,7 +524,7 @@ class MigrateSQLMap extends MigrateMap {
+   public function importedCount() {
+     $query = $this->connection->select($this->mapTable);
+     $query->addExpression('COUNT(*)', 'count');
+-    $query->condition('needs_update', array(MigrateMap::STATUS_IMPORTED, MigrateMap::STATUS_NEEDS_UPDATE), 'IN');
++    $query->condition('import_status', array(MigrateMap::STATUS_IMPORTED, MigrateMap::STATUS_SKIPPED), 'IN');
+     $count = $query->execute()->fetchField();
+     return $count;
+   }
+@@ -471,7 +537,7 @@ class MigrateSQLMap extends MigrateMap {
+   public function updateCount() {
+     $query = $this->connection->select($this->mapTable);
+     $query->addExpression('COUNT(*)', 'count');
+-    $query->condition('needs_update', MigrateMap::STATUS_NEEDS_UPDATE);
++    $query->condition('needs_update', MigrateMap::NEEDS_UPDATE_TRUE);
+     $count = $query->execute()->fetchField();
+     return $count;
+   }
+@@ -485,7 +551,7 @@ class MigrateSQLMap extends MigrateMap {
+   public function errorCount() {
+     $query = $this->connection->select($this->mapTable);
+     $query->addExpression('COUNT(*)', 'count');
+-    $query->condition('needs_update', MigrateMap::STATUS_FAILED);
++    $query->condition('import_status', MigrateMap::STATUS_FAILED);
+     $count = $query->execute()->fetchField();
+     return $count;
+   }
+@@ -558,7 +624,7 @@ class MigrateSQLMap extends MigrateMap {
+    */
+   public function setUpdate(array $source_key) {
+     $query = $this->connection->update($this->mapTable)
+-                              ->fields(array('needs_update' => MigrateMap::STATUS_NEEDS_UPDATE));
++                              ->fields(array('needs_update' => MigrateMap::NEEDS_UPDATE_TRUE));
+     $count = 1;
+     foreach ($source_key as $key_value) {
+       $query->condition('sourceid' . $count++, $key_value);
+diff --git a/tests/plugins/destinations/node.test b/tests/plugins/destinations/node.test
+index 437e2ca..b764f35 100644
+--- a/tests/plugins/destinations/node.test
++++ b/tests/plugins/destinations/node.test
+@@ -381,7 +381,7 @@ class MigrateNodeUnitTest extends DrupalWebTestCase {
+     $this->assertEqual($result, Migration::RESULT_COMPLETED,
+       t('Beer node import returned RESULT_COMPLETED'));
+     db_update('migrate_map_beernode')
+-      ->fields(array('needs_update' => 1))
++      ->fields(array('needs_update' => MigrateMap::NEEDS_UPDATE_TRUE))
+       ->execute();
+     $result = $migration->processImport(array('idlist' => 99999999));
+     $this->assertEqual($result, Migration::RESULT_COMPLETED,
+@@ -392,5 +392,103 @@ class MigrateNodeUnitTest extends DrupalWebTestCase {
+     foreach ($result as $row) {
+       $this->error($row->message);
+     }
++
++    // Test track_changes and skip recording
++    $migration = Migration::getInstance('BeerNode');
++    $result = $migration->processRollback();
++    $result = $migration->processImport();
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node import returned RESULT_COMPLETED'));
++
++    // Find the Miller beer nid
++    $nid = $migration->getMap()->lookupDestinationID(array(99999998));
++
++    $node = node_load($nid['destid1'], NULL, true);
++    $this->assertEqual($node->body['und'][0]['value'], 'We love Miller Brewing',
++      t('Check node->body before track_changes update.'));
++    // Update a source row
++    db_update('migrate_example_beer_node')
++      ->fields(array('body' => 'Everyone loves Miller Brewing'))
++      ->condition('bid', 99999998)
++      ->execute();
++    // Run the import again
++    $result = $migration->processImport();
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node track_changes import returned RESULT_COMPLETED'));
++
++    // Check the import row has been updated
++    $node = node_load($nid['destid1'], NULL, true);
++
++    $this->assertEqual($node->body['und'][0]['value'],
++      'Everyone loves Miller Brewing', t('Check node->body after track_changes update.'));
++
++    $skipped_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_SKIPPED);
++    $this->assertEqual(count($skipped_rows), 2, t('Skipped rows recorded correctly.'));
++
++    $imported_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_IMPORTED);
++    $this->assertEqual(count($imported_rows), 1, t('Imported rows recorded correctly.'));
++
++
++    // Test track-unprocessed and roll back unprocessed - https://drupal.org/node/1416672
++    $count = $migration->sourceCount(TRUE);
++    $this->assertEqual($count, 3, t('Found correct count of source'));
++
++    // Add another beer.
++    $query = db_insert('migrate_example_beer_node')
++      ->fields(array(
++        // Cannot use auto-increment because the next id won't import correctly.
++        'bid' => 10,
++        'name' => 'Sierra Nevada Pale Ale',
++        'body' => 'A lot of hops',
++        'excerpt' => 'Hops',
++      ))
++      ->execute();
++
++    $count = $migration->sourceCount(TRUE);
++    $this->assertEqual($count, 4, t('New row found in source'));
++
++    $result = $migration->processImport();
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node add node import returned RESULT_COMPLETED'));
++
++    // Find Sierra Nevada beer
++    $nid = $migration->getMap()->lookupDestinationID(array(10));
++
++    $skipped_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_SKIPPED);
++    $this->assertEqual(count($skipped_rows), 3, t('Skipped rows recorded correctly.'));
++
++    // Delete the new beer from the source table
++    $query = db_delete('migrate_example_beer_node')
++      ->condition('name', 'Sierra Nevada Pale Ale')
++      ->execute();
++
++    // Set all imported items to unprocessed.
++    $migration->prepareUnprocessed();
++
++    $unprocessed_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_UNPROCESSED);
++    $this->assertEqual(count($unprocessed_rows), 4, t('All map rows set to unprocessed correctly.'));
++
++    $result = $migration->processImport();
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node update(with missing source row) import returned RESULT_COMPLETED'));
++
++    $unprocessed_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_UNPROCESSED);
++    $this->assertEqual(count($unprocessed_rows), 1, t('Missing source row still set to unprocessed.'));
++
++    $result = $migration->processRollback(array('unprocessed' => TRUE));
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node rollback unprocessed returned RESULT_COMPLETED'));
++
++    $unprocessed_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_UNPROCESSED);
++    $this->assertEqual(count($unprocessed_rows), 0, t('Missing source row rolled back.'));
++
++    // Check to make sure we don't delete anything unintentionally
++    $result = $migration->processRollback(array('unprocessed' => TRUE));
++    $this->assertEqual($result, Migration::RESULT_COMPLETED,
++      t('Beer node rollback unprocessed returned RESULT_COMPLETED'));
++
++    $skipped_rows = $migration->getMap()->getRowsofStatus(MigrateMap::STATUS_SKIPPED);
++    $this->assertEqual(count($skipped_rows), 3, t('Roll back unprocessed only removed unprocessed rows.'));
++
+   }
+ }

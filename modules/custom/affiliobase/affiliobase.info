@@ -1,0 +1,6 @@
+name = Affilio functions
+description = Custom codes and functions for current site
+package = Affilio
+core = 7.x
+
+version = "7.x-1.0"

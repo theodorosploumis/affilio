@@ -1,0 +1,228 @@
+// Facet API, Search API
+
+// Facetapi Blocks
+.block-facetapi {
+  //float: left;
+  //width: 15.8%;
+  margin: 0 1% 0 0;
+  font-size: 0.8em;
+  flex: 1;
+  max-width: 260px;
+  &:last-child {
+    margin: 0;
+  }
+  h4.title {
+    background: #ddd;
+    padding: 6px 3px;
+    text-transform: uppercase;
+    border-radius: $radius_small;
+    @include typecsset-font-size(12px);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  a {
+    @include link-colors(#4D4D4D, $filter_link);
+  }
+  input[type=checkbox]:before {
+    content:"";
+    display:inline-block;
+    width:14px;
+    height:14px;
+    background: $filter_bg;
+    cursor: pointer;
+    border: 1px solid #ddd;
+  }
+  input[type=checkbox]:checked:before,
+  li:hover > input[type=checkbox]:before {
+    background: url(../images/ok.png) center center no-repeat $filter_bg;
+  }
+  .inner-search {
+    padding: 6px;
+    margin-bottom: 4px;
+    width: 100%;
+  }
+  .facetapi-facetapi-checkbox-links {
+    height: 140px;
+    overflow: hidden;
+    overflow-y: auto;
+    .active {
+      font-weight: bold;
+    }
+    .item-list {
+      padding: 4px 0 0 20px;
+    }
+  }
+}
+
+.facetapi-checkbox {
+  margin-right: 0.5em;
+}
+
+// Search API current search
+.region-highlighted {
+  .block {
+    display: inline-block;
+  }
+  h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: normal;
+    padding-right: 4px;
+    display: inline-block;
+  }
+}
+
+.region-content-pre {
+  overflow: hidden;
+  width: 100%;
+  display: none;
+  &.js-open {
+    display: flex;
+  }
+}
+
+.current-search-group,
+.current-search-item {
+  display: inline-block;
+  padding-right: 10px;
+}
+
+.current-search-item-results {
+  display: block;
+  padding-bottom: 20px;
+}
+
+.current-search-item-group,
+.current-search-item-active-items {
+  ul {
+    margin: 4px 0;
+    font-size: 11px;
+    display: inline-block;
+    li {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #A9A9A9;
+      color: #fff;
+      border-radius: $radius_small;
+      margin: 0 3px 3px 0;
+    }
+  }
+  a {
+    color: #fff;
+  }
+}
+
+// Toggle filters
+.current-search-item-reset-filters,
+.toggle-filters {
+  display: inline-block;
+  padding: 6px 30px 6px 10px;
+  background: url(../images/toggle-opened.png) no-repeat right 49% #fff;
+  font-size: 11px;
+  text-transform: uppercase;
+  border: 1px solid #ddd;
+  border-radius: $radius_small;
+  cursor: pointer;
+  &.js-open {
+    background: url(../images/toggle-closed.png) no-repeat right 49% #fff;
+  }
+}
+
+// Search API sorts
+.block-search-api-sorts {
+  float: right;
+  @include typecsset-font-size(14px);
+  margin-bottom: 10px;
+  .ctools-auto-submit-click {
+    display: none;
+  }
+}
+
+.search-api-sorts {
+  display: inline-block;
+}
+
+// Search API slider - ranges
+.sidebar-first-button {
+  margin: 20px 0;
+  width: 100%;
+  padding: 6px;
+  font-size: larger;
+  background: #A9A9A9;
+  border: 2px solid #909090;
+  color: #fff;
+  border-radius: $radius_normal;
+  display: block;
+  box-sizing: border-box;
+  text-align: center;
+  &:hover,
+  &:focus {
+    background: #000000;
+  }
+}
+
+.clear-all {
+  margin: 20px 0;
+  a {
+    @extend .sidebar-first-button;
+  }
+}
+
+.search-api-ranges-widget {
+  #edit-submit,
+  #edit-submit--2,
+  #edit-submit--3 {
+    @extend .sidebar-first-button;
+  }
+}
+
+.range-slider-box {
+  clear: both;
+  padding-top: 12px;
+}
+
+.range-box {
+  display: block;
+  text-transform: uppercase;
+  width: 50%;
+  float: left;
+  text-align: center;
+  input {
+    text-align: center;
+    padding: 6px;
+  }
+}
+
+.range-box-right {
+  float: right;
+}
+
+.range-slider > .ui-slider-handle {
+  cursor: w-resize;
+  &:nth-child(2) {
+    cursor: e-resize;
+  }
+}
+
+.ui-slider-horizontal {
+  height: .8em;
+  width: 90%;
+  margin: 0 auto;
+  position: relative;
+  .ui-slider-range {
+    top: 0;
+    height: 100%;
+  }
+}
+
+.ui-state-default,
+.ui-widget-content .ui-state-default,
+.ui-widget-header .ui-state-default {
+  background: #FFF;
+  width: 12px;
+  height: 12px;
+  top: -5px;
+  border: 3px solid $filter_link;
+  background: $filter_bg;
+  border-radius: 50%;
+}
